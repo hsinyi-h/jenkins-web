@@ -1,0 +1,42 @@
+version: "3"
+services:
+  db-host:
+    container_name: db-host
+    image: mysql:5.7
+    environment:
+        MYSQL_ROOT_PASSWORD: password
+    ports:
+        - "3306:3306"
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - ./db/mysql:/var/lib/mysql
+
+  php-host:
+    container_name: php-host
+    image: db-host
+    build: 
+      context: ./php
+    volumes:
+      - ./nginx/html:/usr/share/nginx/html
+      - ./php/php.ini:/usr/local/etc/php/conf.d/php.ini
+    depends_on: ["db-host"]
+
+  nginx-host:
+    container_name: nginx-host
+    image: nginx-host
+    build:
+      context: ./nginx
+    volumes:
+      - ./nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx/html:/usr/share/nginx/html
+    restart: always
+    ports: ["80:80"]
+    depends_on: ["php-host"]
+  jenkins:
+    container_name: jenkins
+    image: jenkins
+    build:
+      context: ./jenkins-ansible
+    ports: ["8080:8080"]
+    volumes:
+      - ./jenkins-ansible/jenkins_newhome:/var/jenkins_home
